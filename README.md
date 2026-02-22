@@ -1,6 +1,6 @@
 # Solana Stablecoin Standard (SSS)
 
-> Open-source SDK and standards for production-ready stablecoins on Solana — built by [Superteam Brazil](https://superteam.fun/brazil)
+> Open-source SDK and standards for production-ready stablecoins on Solana
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Anchor](https://img.shields.io/badge/Anchor-0.31.1-blue)](https://www.anchor-lang.com/)
@@ -199,4 +199,4 @@ solana-stablecoin-standard/
 
 ## License
 
-MIT © Superteam Brazil
+MIT
