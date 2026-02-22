@@ -1,0 +1,26 @@
+{
+  "name": "@stbr/sss-tui",
+  "version": "0.1.0",
+  "description": "Interactive Admin TUI for Solana Stablecoin Standard",
+  "bin": { "sss-tui": "dist/index.js" },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.7.0",
+    "@stbr/sss-token": "*",
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/web3.js": "^1.91.0",
+    "chalk": "^4.1.2",
+    "cli-table3": "^0.6.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2"
+  }
+}

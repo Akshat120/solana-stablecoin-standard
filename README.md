@@ -190,7 +190,9 @@ solana-stablecoin-standard/
 │   └── transfer-hook/      # Transfer hook for SSS-2 blacklist enforcement
 ├── packages/
 │   ├── sdk/                # @stbr/sss-token TypeScript SDK
-│   └── cli/                # @stbr/sss-cli CLI tool
+│   ├── cli/                # @stbr/sss-cli CLI tool
+│   ├── tui/                # @stbr/sss-tui Interactive Admin TUI
+│   └── oracle/             # @stbr/sss-oracle Switchboard price feeds
 ├── services/
 │   ├── mint-service/       # Mint/burn lifecycle (port 3001)
 │   ├── indexer/            # Event listener (port 3002)
@@ -206,6 +208,67 @@ solana-stablecoin-standard/
 ├── docker-compose.yml
 └── package.json
 ```
+
+## Bonus Features
+
+### Interactive Admin TUI
+
+A terminal dashboard for real-time monitoring and keyboard-driven operations, built with `@clack/prompts` and `chalk`.
+
+```bash
+cd packages/tui && npm install && npm run build
+npx sss-tui
+```
+
+**Operations available from the TUI:**
+- 🔄 Refresh live stablecoin dashboard (supply, status, roles)
+- 🪙 Mint / 🔥 Burn tokens
+- ⏸ Pause / ▶ Unpause
+- ❄️ Freeze / 🌊 Thaw token accounts
+- ➕ Add / update minters with quota
+- 🚫 Blacklist addresses (SSS-2 only)
+
+Reads authority keypair and mint from the existing `~/.config/sss-token/config.json` set by `sss-token init`.
+
+---
+
+### Oracle Integration Module (`@stbr/sss-oracle`)
+
+Switchboard on-demand price feeds for non-USD stablecoin pegs. The stablecoin token itself is a standard SSS-1/SSS-2 token — the oracle module is a **separate pricing layer** used by the mint/redeem service to calculate how many tokens to issue per unit of fiat.
+
+```typescript
+import { OracleModule } from "@stbr/sss-oracle";
+import { Connection } from "@solana/web3.js";
+
+const oracle = new OracleModule(
+  new Connection("https://api.mainnet-beta.solana.com"),
+  "mainnet"
+);
+
+// EUR-pegged stablecoin: how many tokens to mint for 100 EUR deposit?
+const quote = await oracle.getMintQuote(100, "EUR/USD");
+console.log(oracle.formatMintQuote(quote));
+// → "Deposit 100.00 EUR ≈ $108.00 USD → mint 108.000000 tokens [switchboard @ 1.080000]"
+
+// BRL-pegged redemption
+const redeem = await oracle.getRedeemQuote(19_000_000n, "BRL/USD");
+console.log(oracle.formatRedeemQuote(redeem));
+// → "Redeem 19.000000 tokens ≈ $19.00 USD → return 100.00 BRL [switchboard @ 0.190000]"
+```
+
+**Supported feeds** (mainnet, via Switchboard on-demand):
+
+| Symbol | Description |
+|--------|-------------|
+| `EUR/USD` | Euro → USD |
+| `GBP/USD` | Pound → USD |
+| `BRL/USD` | Brazilian Real → USD |
+| `SOL/USD` | SOL → USD |
+| `CPI/USD` | CPI index (inflation-adjusted, mock) |
+
+Set `ORACLE_MOCK=true` in your `.env` to use built-in mock prices for local development and devnet testing.
+
+---
 
 ## Fuzz Testing
 

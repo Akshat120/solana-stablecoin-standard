@@ -11,6 +11,7 @@
     "test": "ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts",
     "anchor:build": "anchor build",
     "anchor:test": "anchor test",
+    "tui": "npm run build --workspace=packages/tui && node packages/tui/dist/index.js",
     "fuzz": "trident fuzz run fuzz_0",
     "fuzz:build": "trident fuzz build fuzz_0",
     "lint": "eslint packages/*/src --ext .ts",
