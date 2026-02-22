@@ -13,7 +13,9 @@
     "baseUrl": ".",
     "paths": {
       "@stbr/sss-token": ["packages/sdk/src"],
-      "@stbr/sss-cli": ["packages/cli/src"]
+      "@stbr/sss-cli": ["packages/cli/src"],
+      "@stbr/sss-oracle": ["packages/oracle/src"],
+      "@stbr/sss-tui": ["packages/tui/src"]
     }
   },
   "include": [

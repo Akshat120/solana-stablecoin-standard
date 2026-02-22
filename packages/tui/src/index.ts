@@ -2,11 +2,12 @@
 import chalk from "chalk";
 import Table from "cli-table3";
 import * as p from "@clack/prompts";
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import { SolanaStablecoin, StablecoinStatus } from "@stbr/sss-token";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { fmt, getConnection } from "./utils";
 
 // ─── Config (reuses the sss-token CLI config) ───────────────────────────────
 
@@ -26,17 +27,6 @@ function loadConfig(): CliConfig {
     };
   }
   return JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
-}
-
-function getConnection(cluster: string): Connection {
-  const urls: Record<string, string> = {
-    devnet: "https://api.devnet.solana.com",
-    mainnet: "https://api.mainnet-beta.solana.com",
-    testnet: "https://api.testnet.solana.com",
-    localhost: "http://localhost:8899",
-    localnet: "http://localhost:8899",
-  };
-  return new Connection(urls[cluster] ?? cluster, "confirmed");
 }
 
 function loadKeypair(keypairPath: string): Keypair {
@@ -70,13 +60,6 @@ function renderHeader(config: CliConfig) {
     )
   );
   console.log();
-}
-
-function fmt(n: bigint, decimals = 6): string {
-  const s = n.toString().padStart(decimals + 1, "0");
-  const whole = s.slice(0, -decimals) || "0";
-  const frac = s.slice(-decimals);
-  return `${Number(whole).toLocaleString()}.${frac}`;
 }
 
 function renderDashboard(status: StablecoinStatus, authority: string) {
