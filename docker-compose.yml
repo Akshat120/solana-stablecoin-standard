@@ -1,0 +1,67 @@
+services:
+  mint-service:
+    build: ./services/mint-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - RPC_URL=${RPC_URL:-https://api.devnet.solana.com}
+      - STABLECOIN_PROGRAM_ID=${STABLECOIN_PROGRAM_ID:-CEKm6ppyaCKcTczqALo6k3tpBSaLvhLEKqy7ao3vXdbV}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  indexer:
+    build: ./services/indexer
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - RPC_URL=${RPC_URL:-https://api.devnet.solana.com}
+      - STABLECOIN_PROGRAM_ID=${STABLECOIN_PROGRAM_ID:-CEKm6ppyaCKcTczqALo6k3tpBSaLvhLEKqy7ao3vXdbV}
+      - WEBHOOK_URL=http://webhook:3004/api/dispatch
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    depends_on:
+      - webhook
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  compliance:
+    build: ./services/compliance
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  webhook:
+    build: ./services/webhook
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=production
+      - PORT=3004
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+networks:
+  default:
+    name: sss-network

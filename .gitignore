@@ -1,0 +1,53 @@
+# ===========================
+# Solana / Anchor
+# ===========================
+target/
+.anchor/
+test-ledger/
+
+# ===========================
+# Node / TypeScript
+# ===========================
+node_modules/
+dist/
+build/
+*.js.map
+*.d.ts.map
+
+# ===========================
+# Environment & Secrets
+# ===========================
+.env
+.env.local
+.env.*.local
+
+# ===========================
+# Keypairs & Wallets
+# ===========================
+*-keypair.json
+wallet.json
+id.json
+
+# ===========================
+# Logs
+# ===========================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===========================
+# OS & Editor
+# ===========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===========================
+# Misc
+# ===========================
+patches/

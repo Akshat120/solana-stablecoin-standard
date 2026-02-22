@@ -1,0 +1,22 @@
+{
+  "name": "@stbr/sss-token",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for Solana Stablecoin Standard",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "yarn build"
+  },
+  "keywords": ["solana", "stablecoin", "token-2022", "sss"],
+  "license": "MIT",
+  "peerDependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/spl-token": "^0.4.6",
+    "@solana/web3.js": "^1.91.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

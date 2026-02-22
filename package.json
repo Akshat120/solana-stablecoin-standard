@@ -1,0 +1,32 @@
+{
+  "name": "solana-stablecoin-standard",
+  "version": "0.1.0",
+  "description": "Solana Stablecoin Standard - SSS-1 & SSS-2",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "yarn workspaces run build",
+    "test": "ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts",
+    "anchor:build": "anchor build",
+    "anchor:test": "anchor test",
+    "lint": "eslint packages/*/src --ext .ts",
+    "clean": "yarn workspaces run clean"
+  },
+  "devDependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@types/bn.js": "^5.1.5",
+    "@types/chai": "^4.3.11",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.0",
+    "chai": "^4.4.1",
+    "mocha": "^10.2.0",
+    "ts-mocha": "^10.0.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@solana/spl-token": "^0.4.6",
+    "@solana/web3.js": "^1.91.0"
+  }
+}

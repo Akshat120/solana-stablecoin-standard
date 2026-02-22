@@ -1,0 +1,8 @@
+[fuzz]
+fuzzing_with_stats = true
+allow_duplicate_txs = false
+
+[honggfuzz]
+timeout = 0
+iterations = 0
+exit_upon_crash = true
