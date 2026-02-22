@@ -10,6 +10,13 @@
 
 The Solana Stablecoin Standard (SSS) is a modular, production-ready SDK for building stablecoins on Solana. Think OpenZeppelin for stablecoins — the SDK is the library, SSS-1 and SSS-2 are the standards (what gets adopted and referenced).
 
+## Deployed Programs
+
+| Program | Network | Program ID |
+|---------|---------|-----------|
+| `stablecoin` | Devnet | [`Xv1J7SAGmEMGcULWPZPD7X3SVWt1EsT41fKXPq5XcdK`](https://explorer.solana.com/address/Xv1J7SAGmEMGcULWPZPD7X3SVWt1EsT41fKXPq5XcdK?cluster=devnet) |
+| `transfer_hook` | Devnet | [`AZNBS6e6giRaefJod9DsAqUJSXqbUf8WzPwSuJWjYVCj`](https://explorer.solana.com/address/AZNBS6e6giRaefJod9DsAqUJSXqbUf8WzPwSuJWjYVCj?cluster=devnet) |
+
 ## Architecture
 
 ```

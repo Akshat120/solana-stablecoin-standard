@@ -6,8 +6,8 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-stablecoin = "CEKm6ppyaCKcTczqALo6k3tpBSaLvhLEKqy7ao3vXdbV"
-transfer_hook = "F2ZThxdA51Ki9v4wnFDDkjDMjHmJcPxPxy8FHQk8GERo"
+stablecoin = "Xv1J7SAGmEMGcULWPZPD7X3SVWt1EsT41fKXPq5XcdK"
+transfer_hook = "AZNBS6e6giRaefJod9DsAqUJSXqbUf8WzPwSuJWjYVCj"
 
 [programs.localnet]
 stablecoin = "Xv1J7SAGmEMGcULWPZPD7X3SVWt1EsT41fKXPq5XcdK"
