@@ -74,8 +74,12 @@ pub fn handler(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
         amount,
     )?;
 
-    ctx.accounts.minter_state.minted_this_period += amount;
-    ctx.accounts.stablecoin_state.total_minted += amount;
+    ctx.accounts.minter_state.minted_this_period = ctx.accounts.minter_state.minted_this_period
+        .checked_add(amount)
+        .ok_or(StablecoinError::Overflow)?;
+    ctx.accounts.stablecoin_state.total_minted = ctx.accounts.stablecoin_state.total_minted
+        .checked_add(amount)
+        .ok_or(StablecoinError::Overflow)?;
 
     emit!(TokensMinted {
         mint: ctx.accounts.mint.key(),

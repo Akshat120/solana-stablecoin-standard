@@ -3,8 +3,13 @@ import { createLogger, format, transports } from "winston";
 import axios from "axios";
 import { z } from "zod";
 import dotenv from "dotenv";
+import crypto from "crypto";
 
 dotenv.config();
+
+process.on("unhandledRejection", (reason) => {
+  logger.error("Unhandled rejection", { reason: String(reason) });
+});
 
 const logger = createLogger({
   level: process.env.LOG_LEVEL || "info",
@@ -14,6 +19,15 @@ const logger = createLogger({
 
 const app = express();
 app.use(express.json());
+
+// Security headers middleware
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.removeHeader("X-Powered-By");
+  next();
+});
 
 interface WebhookEndpoint {
   id: string;
@@ -40,8 +54,36 @@ const deliveries: WebhookDelivery[] = [];
 const MAX_RETRIES = 3;
 const RETRY_DELAYS = [1000, 5000, 30000]; // ms
 
+// Block SSRF: reject URLs that resolve to private/loopback IP ranges
+function isPrivateUrl(rawUrl: string): boolean {
+  try {
+    const parsed = new URL(rawUrl);
+    const hostname = parsed.hostname;
+    // Block loopback, private ranges, link-local, metadata IPs
+    const privatePatterns = [
+      /^localhost$/i,
+      /^127\./,
+      /^10\./,
+      /^172\.(1[6-9]|2\d|3[01])\./,
+      /^192\.168\./,
+      /^169\.254\./,   // link-local
+      /^::1$/,         // IPv6 loopback
+      /^fc00:/i,       // IPv6 private
+      /^fe80:/i,       // IPv6 link-local
+      /^0\.0\.0\.0$/,
+      /^169\.254\.169\.254$/, // AWS/GCP metadata endpoint
+    ];
+    return privatePatterns.some((re) => re.test(hostname));
+  } catch {
+    return true; // malformed URL → reject
+  }
+}
+
 const EndpointSchema = z.object({
-  url: z.string().url(),
+  url: z.string().url().refine(
+    (url) => !isPrivateUrl(url),
+    { message: "URL must not point to a private or loopback address" }
+  ),
   events: z.array(z.string()),
   secret: z.string().optional(),
 });
@@ -149,16 +191,21 @@ async function deliverWithRetry(
     delivery.lastAttempt = new Date().toISOString();
 
     try {
+      const timestamp = new Date().toISOString();
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         "X-SSS-Event": delivery.event.type || "unknown",
         "X-SSS-Delivery": delivery.id,
-        "X-SSS-Timestamp": new Date().toISOString(),
+        "X-SSS-Timestamp": timestamp,
       };
 
       if (endpoint.secret) {
-        // In production: HMAC-SHA256 signature
-        headers["X-SSS-Signature"] = `sha256=HMAC_PLACEHOLDER`;
+        const payload = JSON.stringify(delivery.event);
+        const sig = crypto
+          .createHmac("sha256", endpoint.secret)
+          .update(payload)
+          .digest("hex");
+        headers["X-SSS-Signature"] = `sha256=${sig}`;
       }
 
       const response = await axios.post(endpoint.url, delivery.event, {

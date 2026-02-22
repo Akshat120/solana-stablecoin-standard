@@ -31,7 +31,7 @@ pub struct Seize<'info> {
     )]
     pub blacklist_entry: Account<'info, BlacklistEntry>,
 
-    #[account(mut, token::mint = mint)]
+    #[account(mut, token::mint = mint, token::authority = target_address)]
     pub from_token_account: InterfaceAccount<'info, TokenAccount>,
 
     #[account(mut, token::mint = mint)]
@@ -42,6 +42,7 @@ pub struct Seize<'info> {
 
 pub fn handler(ctx: Context<Seize>, amount: u64) -> Result<()> {
     require!(amount > 0, StablecoinError::InvalidAmount);
+    require!(!ctx.accounts.stablecoin_state.paused, StablecoinError::Paused);
 
     let mint_key = ctx.accounts.mint.key();
     let seeds = &[

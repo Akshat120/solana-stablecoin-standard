@@ -6,6 +6,10 @@ import { PublicKey } from "@solana/web3.js";
 
 dotenv.config();
 
+process.on("unhandledRejection", (reason) => {
+  logger.error("Unhandled rejection", { reason: String(reason) });
+});
+
 const logger = createLogger({
   level: process.env.LOG_LEVEL || "info",
   format: format.combine(format.timestamp(), format.json()),
@@ -14,6 +18,15 @@ const logger = createLogger({
 
 const app = express();
 app.use(express.json());
+
+// Security headers middleware
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.removeHeader("X-Powered-By");
+  next();
+});
 
 // Audit log store (use PostgreSQL/S3 in production)
 interface AuditEntry {
@@ -52,6 +65,18 @@ const AuditEntrySchema = z.object({
   txSignature: z.string().optional(),
   riskScore: z.number().optional(),
 });
+
+// Escape a value for safe CSV inclusion (RFC 4180)
+function csvEscape(value: string | number | undefined): string {
+  const str = String(value ?? "");
+  // Neutralize formula injection: prefix cells starting with =, +, -, @ with a tab
+  const safe = /^[=+\-@\t\r]/.test(str) ? `\t${str}` : str;
+  // Quote fields that contain commas, newlines, or double-quotes
+  if (/[",\r\n]/.test(safe)) {
+    return `"${safe.replace(/"/g, '""')}"`;
+  }
+  return safe;
+}
 
 // GET /health
 app.get("/health", (_req, res) => {
@@ -111,7 +136,7 @@ app.post("/api/audit", (req, res) => {
     };
 
     auditLog.push(entry);
-    logger.info("Audit entry recorded", entry);
+    logger.info("Audit entry recorded", { id: entry.id, action: entry.action });
     res.status(201).json(entry);
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -138,10 +163,16 @@ app.get("/api/audit", (req, res) => {
   }
   if (fromDate) {
     const from = new Date(fromDate as string);
+    if (isNaN(from.getTime())) {
+      return res.status(400).json({ error: "Invalid fromDate" });
+    }
     filtered = filtered.filter((e) => new Date(e.timestamp) >= from);
   }
   if (toDate) {
     const to = new Date(toDate as string);
+    if (isNaN(to.getTime())) {
+      return res.status(400).json({ error: "Invalid toDate" });
+    }
     filtered = filtered.filter((e) => new Date(e.timestamp) <= to);
   }
 
@@ -158,9 +189,15 @@ app.get("/api/audit/export.csv", (_req, res) => {
     "id,timestamp,action,address,operator,txSignature,riskScore",
     ...auditLog.map(
       (e) =>
-        `${e.id},${e.timestamp},${e.action},${e.address},${e.operator},${
-          e.txSignature || ""
-        },${e.riskScore || ""}`
+        [
+          csvEscape(e.id),
+          csvEscape(e.timestamp),
+          csvEscape(e.action),
+          csvEscape(e.address),
+          csvEscape(e.operator),
+          csvEscape(e.txSignature),
+          csvEscape(e.riskScore),
+        ].join(",")
     ),
   ].join("\n");
 
@@ -197,7 +234,7 @@ async function performSanctionsCheck(address: string): Promise<{
   // - Chainalysis KYT API
   // - Elliptic API
   // - TRM Labs API
-  logger.info("Performing sanctions check", { address });
+  logger.info("Performing sanctions check");
 
   return {
     address,

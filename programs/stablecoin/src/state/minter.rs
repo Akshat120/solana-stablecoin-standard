@@ -28,6 +28,6 @@ impl MinterState {
         if self.quota == 0 {
             return true; // unlimited
         }
-        self.minted_this_period + amount <= self.quota
+        self.minted_this_period.checked_add(amount).map_or(false, |sum| sum <= self.quota)
     }
 }

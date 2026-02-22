@@ -34,4 +34,8 @@ pub enum StablecoinError {
     MaxMintersReached,
     #[msg("Transfer hook not initialized")]
     TransferHookNotInitialized,
+    #[msg("Arithmetic overflow")]
+    Overflow,
+    #[msg("Token account does not belong to the target address")]
+    InvalidTokenAccountOwner,
 }

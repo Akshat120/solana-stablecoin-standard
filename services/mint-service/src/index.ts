@@ -16,8 +16,21 @@ const logger = createLogger({
   transports: [new transports.Console()],
 });
 
+process.on("unhandledRejection", (reason) => {
+  logger.error("Unhandled rejection", { reason: String(reason) });
+});
+
 const app = express();
 app.use(express.json());
+
+// Security headers middleware
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.removeHeader("X-Powered-By");
+  next();
+});
 
 // In-memory request store (use Redis/PostgreSQL in production)
 const requests = new Map<string, MintRequest>();
@@ -83,11 +96,8 @@ app.post("/api/mint", async (req, res) => {
     };
 
     requests.set(requestId, request);
-    logger.info("Mint request created", {
-      requestId,
-      recipient: data.recipient,
-      amount: data.amount,
-    });
+    // Log only the request ID — omit recipient/amount to avoid PII/financial data in logs
+    logger.info("Mint request created", { requestId });
 
     // Async processing
     processMintRequest(requestId, data).catch((err) => {
@@ -128,11 +138,7 @@ app.post("/api/burn", async (req, res) => {
     };
 
     requests.set(requestId, request);
-    logger.info("Burn request created", {
-      requestId,
-      fromAccount: data.fromAccount,
-      amount: data.amount,
-    });
+    logger.info("Burn request created", { requestId });
 
     res.status(202).json({ requestId, status: "pending" });
   } catch (err: any) {
@@ -180,10 +186,7 @@ async function processMintRequest(
   request.status = "completed";
   request.txSignature = "simulated_tx_" + requestId;
   request.updatedAt = new Date().toISOString();
-  logger.info("Mint completed", {
-    requestId,
-    txSignature: request.txSignature,
-  });
+  logger.info("Mint completed", { requestId });
 }
 
 const PORT = process.env.PORT || 3001;

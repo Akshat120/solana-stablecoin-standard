@@ -12,8 +12,21 @@ const logger = createLogger({
   transports: [new transports.Console()],
 });
 
+process.on("unhandledRejection", (reason) => {
+  logger.error("Unhandled rejection", { reason: String(reason) });
+});
+
 const app = express();
 app.use(express.json());
+
+// Security headers middleware
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.removeHeader("X-Powered-By");
+  next();
+});
 
 // Off-chain event store (use PostgreSQL in production)
 interface IndexedEvent {
@@ -32,7 +45,39 @@ const PROGRAM_ID = new PublicKey(
 );
 const RPC_URL =
   process.env.RPC_URL || "https://api.devnet.solana.com";
-const WEBHOOK_URL = process.env.WEBHOOK_URL;
+const RAW_WEBHOOK_URL = process.env.WEBHOOK_URL;
+
+// Validate the WEBHOOK_URL points to a non-private host to prevent SSRF
+function isSafeUrl(rawUrl: string): boolean {
+  try {
+    const parsed = new URL(rawUrl);
+    const hostname = parsed.hostname;
+    const privatePatterns = [
+      /^localhost$/i,
+      /^127\./,
+      /^10\./,
+      /^172\.(1[6-9]|2\d|3[01])\./,
+      /^192\.168\./,
+      /^169\.254\./,
+      /^::1$/,
+      /^fc00:/i,
+      /^fe80:/i,
+      /^0\.0\.0\.0$/,
+    ];
+    return !privatePatterns.some((re) => re.test(hostname));
+  } catch {
+    return false;
+  }
+}
+
+const WEBHOOK_URL: string | undefined =
+  RAW_WEBHOOK_URL && isSafeUrl(RAW_WEBHOOK_URL)
+    ? RAW_WEBHOOK_URL
+    : undefined;
+
+if (RAW_WEBHOOK_URL && !WEBHOOK_URL) {
+  logger.warn("WEBHOOK_URL was rejected (private/invalid address). Webhook delivery disabled.");
+}
 
 async function startIndexer() {
   const connection = new Connection(RPC_URL, "confirmed");

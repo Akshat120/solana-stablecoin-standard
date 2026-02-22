@@ -16,8 +16,8 @@ pub const BLACKLIST_SEED: &[u8] = b"blacklist";
 /// Seeds for stablecoin state (must match stablecoin program)
 pub const STABLECOIN_STATE_SEED: &[u8] = b"stablecoin_state";
 
-/// The stablecoin program ID - set at deployment
-pub const STABLECOIN_PROGRAM_ID: Pubkey = pubkey!("5KEn7iFu6sRahbgMyG6zaQG13ntWWfiRz1Rc1pY9sF6u");
+/// The stablecoin program ID - must match programs/stablecoin/src/lib.rs declare_id!
+pub const STABLECOIN_PROGRAM_ID: Pubkey = pubkey!("Xv1J7SAGmEMGcULWPZPD7X3SVWt1EsT41fKXPq5XcdK");
 
 #[program]
 pub mod transfer_hook {
@@ -75,16 +75,18 @@ pub mod transfer_hook {
 
     /// Transfer hook - called on every Token-2022 transfer
     pub fn transfer_hook(ctx: Context<TransferHook>, _amount: u64) -> Result<()> {
-        // Check if sender blacklist entry exists (account will be empty if not blacklisted)
+        // Check if sender blacklist entry exists and is owned by the stablecoin program.
+        // An account at this PDA only qualifies as a blacklist entry if:
+        // 1. It has data (non-empty) — uninitialized system accounts have 0 bytes
+        // 2. Its owner is the stablecoin program — prevents spoofing with arbitrary accounts
         let sender_blacklist = &ctx.accounts.sender_blacklist_entry;
-        if sender_blacklist.data_len() > 0 && !sender_blacklist.data_is_empty() {
-            // Account exists = blacklisted
+        if sender_blacklist.owner == &STABLECOIN_PROGRAM_ID && sender_blacklist.data_len() > 0 {
             return err!(TransferHookError::SenderBlacklisted);
         }
 
         // Check if receiver blacklist entry exists
         let receiver_blacklist = &ctx.accounts.receiver_blacklist_entry;
-        if receiver_blacklist.data_len() > 0 && !receiver_blacklist.data_is_empty() {
+        if receiver_blacklist.owner == &STABLECOIN_PROGRAM_ID && receiver_blacklist.data_len() > 0 {
             return err!(TransferHookError::ReceiverBlacklisted);
         }
 

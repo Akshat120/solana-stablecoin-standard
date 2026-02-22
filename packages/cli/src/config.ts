@@ -35,9 +35,9 @@ export function loadConfig(): CliConfig {
 export function saveConfig(config: CliConfig): void {
   const dir = path.dirname(CONFIG_PATH);
   if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   }
-  fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), { mode: 0o600 });
 }
 
 export function getConnection(cluster?: string): Connection {

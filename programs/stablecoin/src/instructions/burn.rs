@@ -45,7 +45,9 @@ pub fn handler(ctx: Context<BurnTokens>, amount: u64) -> Result<()> {
         amount,
     )?;
 
-    state.total_burned += amount;
+    state.total_burned = state.total_burned
+        .checked_add(amount)
+        .ok_or(StablecoinError::Overflow)?;
 
     emit!(TokensBurned {
         mint: ctx.accounts.mint.key(),
