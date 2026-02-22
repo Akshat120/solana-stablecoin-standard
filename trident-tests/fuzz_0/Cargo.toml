@@ -1,0 +1,19 @@
+[package]
+name = "fuzz_0"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Fuzz crates are built independently (honggfuzz has native deps).
+# Exclude from the root workspace so normal `anchor build` / `cargo build`
+# is unaffected. Use `trident fuzz run fuzz_0` or `cargo hfuzz run fuzz_0`.
+[workspace]
+
+[[bin]]
+name = "fuzz_0"
+path = "src/bin/fuzz_0.rs"
+doc = false
+
+[dependencies]
+honggfuzz = "0.5"
+arbitrary = { version = "1", features = ["derive"] }

@@ -2,6 +2,10 @@
 fuzzing_with_stats = true
 allow_duplicate_txs = false
 
+[[fuzz.target]]
+name = "fuzz_0"
+path = "trident-tests/fuzz_0"
+
 [honggfuzz]
 timeout = 0
 iterations = 0

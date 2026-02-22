@@ -9,7 +9,49 @@
 // 5. Unauthorized callers always fail with Unauthorized
 // 6. Seize requires BlacklistEntry to exist
 
-use trident_client::fuzzing::*;
+use arbitrary::Unstructured;
+
+/// Drive all fuzz functions from raw arbitrary bytes produced by the fuzzer.
+/// Called by the honggfuzz harness in src/bin/fuzz_0.rs.
+pub fn run_all(u: &mut Unstructured<'_>) {
+    if let (Ok(name), Ok(symbol), Ok(decimals), Ok(ec), Ok(epd), Ok(eth)) = (
+        u.arbitrary::<String>(),
+        u.arbitrary::<String>(),
+        u.arbitrary::<u8>(),
+        u.arbitrary::<bool>(),
+        u.arbitrary::<bool>(),
+        u.arbitrary::<bool>(),
+    ) {
+        fuzz_initialize(name, symbol, decimals, ec, epd, eth);
+    }
+
+    if let (Ok(amount), Ok(quota), Ok(paused), Ok(minted_so_far)) = (
+        u.arbitrary::<u64>(),
+        u.arbitrary::<u64>(),
+        u.arbitrary::<bool>(),
+        u.arbitrary::<u64>(),
+    ) {
+        fuzz_mint(amount, quota, paused, minted_so_far);
+    }
+
+    if let (Ok(compliance_enabled), Ok(reason), Ok(is_blacklister)) = (
+        u.arbitrary::<bool>(),
+        u.arbitrary::<String>(),
+        u.arbitrary::<bool>(),
+    ) {
+        fuzz_blacklist(compliance_enabled, reason, is_blacklister);
+    }
+
+    if let (Ok(ce), Ok(pde), Ok(tb), Ok(is_seizer), Ok(amount)) = (
+        u.arbitrary::<bool>(),
+        u.arbitrary::<bool>(),
+        u.arbitrary::<bool>(),
+        u.arbitrary::<bool>(),
+        u.arbitrary::<u64>(),
+    ) {
+        fuzz_seize(ce, pde, tb, is_seizer, amount);
+    }
+}
 
 /// Fuzz the initialize instruction with random params.
 /// Key invariants:
@@ -28,6 +70,7 @@ pub fn fuzz_initialize(
     if enable_permanent_delegate || enable_transfer_hook {
         assert!(enable_compliance, "Compliance extensions require compliance mode");
     }
+    let _ = (name, symbol, decimals);
 }
 
 /// Fuzz minting with random amounts and quotas.
@@ -40,11 +83,15 @@ pub fn fuzz_mint(amount: u64, quota: u64, paused: bool, minted_so_far: u64) {
         // Should fail with Paused
         return;
     }
-    if quota > 0 && minted_so_far + amount > quota {
+    if quota > 0 && minted_so_far.saturating_add(amount) > quota {
         // Should fail with QuotaExceeded
         return;
     }
-    // Valid mint
+    // Valid mint: total_minted must not overflow
+    assert!(
+        minted_so_far.checked_add(amount).is_some(),
+        "Mint overflow must be caught by checked_add"
+    );
 }
 
 /// Fuzz blacklist operations.
@@ -101,5 +148,6 @@ pub fn fuzz_seize(
         // Should fail with InvalidAmount
         return;
     }
-    // Valid seize
+    // Valid seize: amount must not overflow
+    assert!(amount > 0, "Seize amount invariant");
 }

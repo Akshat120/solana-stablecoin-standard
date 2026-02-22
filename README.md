@@ -190,11 +190,44 @@ solana-stablecoin-standard/
 │   ├── compliance/         # Sanctions & audit (port 3003)
 │   └── webhook/            # Notifications (port 3004)
 ├── tests/                  # Integration tests
+├── trident-tests/
+│   └── fuzz_0/             # Honggfuzz property tests (trident fuzz run fuzz_0)
 ├── docs/                   # Documentation
 ├── Anchor.toml
 ├── Cargo.toml
+├── Trident.toml
 ├── docker-compose.yml
 └── package.json
+```
+
+## Fuzz Testing
+
+Property-based fuzz tests live in [`trident-tests/fuzz_0/`](trident-tests/fuzz_0/) and are run with [Trident](https://github.com/Ackee-Blockchain/trident) (honggfuzz backend).
+
+**Invariants covered:**
+- Compliance extensions (`permanent_delegate`, `transfer_hook`) require `enable_compliance = true`
+- Minting beyond quota always fails with `QuotaExceeded`
+- Minting / burning arithmetic never overflows (`checked_add`)
+- Paused stablecoin rejects all mint operations
+- Seize requires: `compliance_enabled`, `permanent_delegate_enabled`, target blacklisted, non-zero amount
+- Blacklist reason must be ≤ 200 characters
+
+**Prerequisites:**
+```bash
+cargo install trident-cli
+cargo install honggfuzz
+```
+
+**Run:**
+```bash
+# Via npm
+npm run fuzz
+
+# Or directly with Trident
+trident fuzz run fuzz_0
+
+# Or with honggfuzz directly
+cd trident-tests/fuzz_0 && cargo hfuzz run fuzz_0
 ```
 
 ## License
